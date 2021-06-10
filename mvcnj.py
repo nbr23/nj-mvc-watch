@@ -60,7 +60,6 @@ def pretty_apt(apt_data, appointment_type):
     for apt in apt_data:
         apt = apt_data[apt]
         if m := RE_APT_DATE.match(apt["FirstOpenSlot"]):
-            print(m)
             if date := format_date(m.group(1)):
                 yield f'{apt["Name"]}: {apt["FirstOpenSlot"].replace("<br/>", "")}\nhttps://telegov.njportal.com/njmvc/AppointmentWizard/{appointment_type}/{apt["Id"]}/{date[0]}/{date[1]}'
                 continue
