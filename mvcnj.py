@@ -68,10 +68,14 @@ def pretty_apt(apt_data, appointment_type):
 def get_available_apt(apt_data):
     return {apt: apt_data[apt] for apt in apt_data if 'No Appointments' not in apt_data[apt]['FirstOpenSlot']}
 
-def telegram_notify(apt_data, chat_id, bot_id, appointment_type):
-    for apt in pretty_apt(apt_data, appointment_type):
+def notify(apt_data, config):
+    if config.get('telegram_notify', False):
+        if not config.get('telegram_bot').startswith('bot'):
+            config['telegram_bot'] = 'bot' + config['telegram_bot']
+    for apt in pretty_apt(apt_data, config.get('appointment_type')):
         print(apt)
-        requests.get(f'https://api.telegram.org/{bot_id}/sendMessage?chat_id={chat_id}&text={urllib.parse.quote_plus(apt)}')
+        if config.get('telegram_notify', False):
+            requests.get(f'https://api.telegram.org/{config["telegram_bot"]}/sendMessage?chat_id={config.get("telegram_chat_id")}&text={urllib.parse.quote_plus(apt)}')
 
 def filter_old_apt(new_apt, old_apt):
     return {apt: new_apt[apt] for apt in new_apt if apt not in old_apt}
@@ -85,7 +89,7 @@ def main():
     while True:
         apts = get_apt_location_data(apt_type=config.get('appointment_type'))
         available_apts = get_available_apt(apts)
-        telegram_notify(filter_old_apt(available_apts, prev_apt), config.get('telegram_chat_id'), config.get('telegram_bot'), config.get('appointment_type'))
+        notify(filter_old_apt(available_apts, prev_apt), config)
         prev_apt = available_apts
         sleep(delay)
 
