@@ -69,13 +69,15 @@ def get_available_apt(apt_data):
     return {apt: apt_data[apt] for apt in apt_data if 'No Appointments' not in apt_data[apt]['FirstOpenSlot']}
 
 def notify(apt_data, config):
+    city = config.get('city', '')
     if config.get('telegram_notify', False):
         if not config.get('telegram_bot').startswith('bot'):
             config['telegram_bot'] = 'bot' + config['telegram_bot']
     for apt in pretty_apt(apt_data, config.get('appointment_type')):
         print(apt)
-        if config.get('telegram_notify', False):
-            requests.get(f'https://api.telegram.org/{config["telegram_bot"]}/sendMessage?chat_id={config.get("telegram_chat_id")}&text={urllib.parse.quote_plus(apt)}')
+        if city in apt:    
+            if config.get('telegram_notify', False):
+                requests.get(f'https://api.telegram.org/{config["telegram_bot"]}/sendMessage?chat_id={config.get("telegram_chat_id")}&text={urllib.parse.quote_plus(apt)}')
 
 def filter_old_apt(new_apt, old_apt):
     return {apt: new_apt[apt] for apt in new_apt if apt not in old_apt}

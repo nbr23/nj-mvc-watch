@@ -1,5 +1,6 @@
 appointment_type: 15 # 15 is INITIAL PERMIT (NOT FOR KNOWLEDGE TEST)
 refresh_delay_sec: 15 # How often (in seconds) to poll the NJ MVC website
-telegram_notify: false # Enable or not telegram notifications
-telegram_bot: 'botXXXXXXXX' # Bot token of your telegram bot
+telegram_notify: true # Enable or not telegram notifications
+telegram_bot: '' # Bot token of your telegram bot
 telegram_chat_id: '' # chat_id of the contact or group to send the messages to
+city: 'North Bergen' # You will only be notified if there is avaiable seats in the MVC of this city
