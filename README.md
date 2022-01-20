@@ -23,6 +23,14 @@ Update the file with your custom values.
 
 ## Running
 
+### List appointment types
+
+List possible appointment types, to fill the `appointment_type` variable:
+
+`python3 mvcnj.py -lstypes`
+
+### Run bot
+
 To execute the bot, just run:
 
 `python3 mvcnj.py [configfile.yaml]`

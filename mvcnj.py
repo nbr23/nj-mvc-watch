@@ -18,6 +18,12 @@ ID_TAG = {
     'timeData': 'LocationId'
 }
 
+def appointment_types():
+    r = requests.get('https://telegov.njportal.com/njmvc/AppointmentWizard/')
+    page = bs4.BeautifulSoup(r.text, features="html.parser")
+    for t in page.find_all('a', class_="text-white text-uppercase"):
+        yield (t.attrs["href"].split('/')[-1], t.text.strip())
+
 def format_date(s):
     try:
         date = datetime.strptime(s, '%m/%d/%Y %I:%M %p')
@@ -83,6 +89,12 @@ def filter_old_apt(new_apt, old_apt):
     return {apt: new_apt[apt] for apt in new_apt if apt not in old_apt}
 
 def main():
+    if len(sys.argv) == 2 and sys.argv[1] == '-lstypes':
+        print("Appointment types:")
+        for n, name in appointment_types():
+            print(f"\t{n}: {name}")
+        exit(0)
+
     config = load_config('config.yaml' if len(sys.argv) == 1 else sys.argv[1])
     if not config:
         return 1
