@@ -79,6 +79,7 @@ def notify(apt_data, config):
     if config.get('telegram_notify', False):
         if not config.get('telegram_bot').startswith('bot'):
             config['telegram_bot'] = 'bot' + config['telegram_bot']
+    
     for apt in pretty_apt(apt_data, config.get('appointment_type')):
         if city is None or city in apt:
             print(apt)
