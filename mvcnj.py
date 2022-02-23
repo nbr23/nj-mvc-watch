@@ -67,21 +67,21 @@ def pretty_apt(apt_data, appointment_type):
         apt = apt_data[apt]
         if m := RE_APT_DATE.match(apt["FirstOpenSlot"]):
             if date := format_date(m.group(1)):
-                yield f'{apt["Name"]}: {apt["FirstOpenSlot"].replace("<br/>", "")}\nhttps://telegov.njportal.com/njmvc/AppointmentWizard/{appointment_type}/{apt["Id"]}/{date[0]}/{date[1]}'
+                yield apt, f'{apt["Name"]}: {apt["FirstOpenSlot"].replace("<br/>", "")}\nhttps://telegov.njportal.com/njmvc/AppointmentWizard/{appointment_type}/{apt["Id"]}/{date[0]}/{date[1]}'
                 continue
-        yield f'{apt["Name"]}: {apt["FirstOpenSlot"].replace("<br/>", "")}\nhttps://telegov.njportal.com/njmvc/AppointmentWizard/{appointment_type}/{apt["Id"]}'
+        yield apt, f'{apt["Name"]}: {apt["FirstOpenSlot"].replace("<br/>", "")}\nhttps://telegov.njportal.com/njmvc/AppointmentWizard/{appointment_type}/{apt["Id"]}'
 
 def get_available_apt(apt_data):
     return {apt: apt_data[apt] for apt in apt_data if 'No Appointments' not in apt_data[apt]['FirstOpenSlot']}
 
 def notify(apt_data, config):
-    city = config.get('city')
+    cities = [c.lower() for c in config.get('cities', [])]
     if config.get('telegram_notify', False):
         if not config.get('telegram_bot').startswith('bot'):
             config['telegram_bot'] = 'bot' + config['telegram_bot']
     
-    for apt in pretty_apt(apt_data, config.get('appointment_type')):
-        if city is None or city in apt:
+    for raw, apt in pretty_apt(apt_data, config.get('appointment_type')):
+        if len(cities) == 0 or raw["City"].lower() in cities or raw["Name"].split(" - ")[0].lower() in cities:
             print(apt)
             if config.get('telegram_notify', False):
                 requests.get(f'https://api.telegram.org/{config["telegram_bot"]}/sendMessage?chat_id={config.get("telegram_chat_id")}&text={urllib.parse.quote_plus(apt)}')
