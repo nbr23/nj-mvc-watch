@@ -103,9 +103,10 @@ def main():
     prev_apt = {}
     while True:
         apts = get_apt_location_data(apt_type=config.get('appointment_type'))
-        available_apts = get_available_apt(apts)
-        notify(filter_old_apt(available_apts, prev_apt), config)
-        prev_apt = available_apts
+        if apts is not None:
+            available_apts = get_available_apt(apts)
+            notify(filter_old_apt(available_apts, prev_apt), config)
+            prev_apt = available_apts
         sleep(delay)
 
 if __name__ == "__main__":
