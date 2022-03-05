@@ -55,15 +55,16 @@ def parse_js_apt_data(scripts):
                             apts[loc_id] = td
     return apts
 
-def get_apt_location_data(apt_type=15):
+def get_apt_location_data(apt_type):
     r = requests.get(f'https://telegov.njportal.com/njmvc/AppointmentWizard/{apt_type}')
     if r.status_code != 200:
-        return
+        return {}
     page = bs4.BeautifulSoup(r.text, features="html.parser")
     return parse_js_apt_data(page.find_all('script'))
 
-def pretty_apt(apt_data, appointment_type):
+def pretty_apt(apt_data):
     for apt in apt_data:
+        appointment_type, _ = apt
         apt = apt_data[apt]
         if m := RE_APT_DATE.match(apt["FirstOpenSlot"]):
             if date := format_date(m.group(1)):
@@ -71,16 +72,16 @@ def pretty_apt(apt_data, appointment_type):
                 continue
         yield apt, f'{apt["Name"]}: {apt["FirstOpenSlot"].replace("<br/>", "")}\nhttps://telegov.njportal.com/njmvc/AppointmentWizard/{appointment_type}/{apt["Id"]}'
 
-def get_available_apt(apt_data):
-    return {apt: apt_data[apt] for apt in apt_data if 'No Appointments' not in apt_data[apt]['FirstOpenSlot']}
+def get_available_apt(apt_data, apt_type):
+    return {(apt_type, apt_data[apt]['City']): apt_data[apt] for apt in apt_data if 'No Appointments' not in apt_data[apt]['FirstOpenSlot']}
 
 def notify(apt_data, config):
     cities = [c.lower() for c in config.get('cities', [])]
     if config.get('telegram_notify', False):
         if not config.get('telegram_bot').startswith('bot'):
             config['telegram_bot'] = 'bot' + config['telegram_bot']
-    
-    for raw, apt in pretty_apt(apt_data, config.get('appointment_type')):
+
+    for raw, apt in pretty_apt(apt_data):
         if len(cities) == 0 or raw["City"].lower() in cities or raw["Name"].split(" - ")[0].lower() in cities:
             print(apt)
             if config.get('telegram_notify', False):
@@ -99,14 +100,21 @@ def main():
     config = load_config('config.yaml' if len(sys.argv) == 1 else sys.argv[1])
     if not config:
         return 1
+
+    apt_types = config.get('appointment_types', [15])
+    if not isinstance(apt_types, list):
+        apt_types = [apt_types]
     delay = config.get('refresh_delay_sec', 10)
-    prev_apt = {}
+
+    prev_apt = {apt_type: {} for apt_type in apt_types}
+
     while True:
-        apts = get_apt_location_data(apt_type=config.get('appointment_type'))
-        if apts is not None:
-            available_apts = get_available_apt(apts)
-            notify(filter_old_apt(available_apts, prev_apt), config)
-            prev_apt = available_apts
+        for apt_type in apt_types:
+            apts = get_apt_location_data(apt_type)
+            if apts is not None:
+                available_apts = get_available_apt(apts, apt_type)
+                notify(filter_old_apt(available_apts, prev_apt[apt_type]), config)
+                prev_apt[apt_type] = available_apts
         sleep(delay)
 
 if __name__ == "__main__":
